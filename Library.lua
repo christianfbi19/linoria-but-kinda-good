@@ -4057,69 +4057,6 @@ end;
 function Library:ShowLoader(Config, Callback)
     -- Config = { Title, SupportedGames = { [placeId] = "Game Name", ... } }
     Config = Config or {};
-    Config.Title = Config.Title or 'pretty.win';
-    Config.SupportedGames = Config.SupportedGames or {};
-
-    local ScreenGui = Library.ScreenGui;
-    local TweenService = game:GetService('TweenService');
-    local MarketplaceService = game:GetService('MarketplaceService');
-
-    local placeId = game.PlaceId;
-    local isSupported = Config.SupportedGames[placeId] ~= nil;
-    local gameName = Config.SupportedGames[placeId] or 'Unknown Game';
-
-    -- try to get real game info
-    pcall(function()
-        local info = MarketplaceService:GetProductInfo(placeId);
-        if info and info.Name then
-            if not isSupported then
-                gameName = info.Name;
-            end
-        end
-    end)
-
-    -- get game icon
-    local gameIcon = '';
-    pcall(function()
-        gameIcon = ('https://www.roblox.com/asset-thumbnail/image?assetId=%d&width=256&height=256&format=Png'):format(placeId);
-    end)
-    -- fallback: use thumbs api
-    pcall(function()
-        local thumbUrl = ('rbxthumb://type=GameIcon&id=%d&w=256&h=256'):format(game.GameId ~= 0 and game.GameId or placeId);
-        gameIcon = thumbUrl;
-    end)
-
-    -- overlay
-    local LoaderOverlay = Library:Create('Frame', {
-        AnchorPoint = Vector2.new(0.5, 0.5);
-        BackgroundColor3 = Color3.fromRGB(15, 15, 15);
-        BorderSizePixel = 0;
-        Position = UDim2.new(0.5, 0, 0.5, 0);
-        Size = UDim2.new(1, 0, 1, 0);
-        ZIndex = 500;
-        Parent = ScreenGui;
-    });
-
-    -- center container
-    local LoaderBox = Library:Create('Frame', {
-        AnchorPoint = Vector2.new(0.5, 0.5);
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0.5, 0, 0.5, 0);
-        Size = UDim2.fromOffset(220, 260);
-        ZIndex = 501;
-        Parent = LoaderOverlay;
-    });
-
-    -- title
-    Library:Create('TextLabel', {
-        AnchorPoint = Vector2.new(0.5, 0);
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0.5, 0, 0, 0);
-        Size = UDim2.new(1, 0, 0, 30);
--- loader screen: shows game icon, name, and support status before the main ui
-function Library:ShowLoader(Config, Callback)
-    -- Config = { Title, SupportedGames = { [placeId] = "Game Name", ... } }
-    Config = Config or {};
     Config.Title = Config.Title or 'ethereon.xyz';
     Config.SupportedGames = Config.SupportedGames or {};
 
@@ -4321,6 +4258,7 @@ function Library:ShowLoader(Config, Callback)
         if plr then plr:Kick("Exited") end
     end)
 end
+
 
 function Library:SetWatermarkVisibility(Bool)
     Library.Watermark.Visible = Bool;

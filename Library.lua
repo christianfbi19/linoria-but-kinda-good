@@ -1245,8 +1245,7 @@ do
                     end
                 end;
             end;
-
-            Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 40, 210), 0, YSize + 30)
+            Library.KeybindFrame.Size = UDim2.new(0, math.max(XSize + 40, 210), 0, YSize + 34)
         end;
 
         function KeyPicker:GetState()
@@ -4117,125 +4116,209 @@ function Library:ShowLoader(Config, Callback)
         BackgroundTransparency = 1;
         Position = UDim2.new(0.5, 0, 0, 0);
         Size = UDim2.new(1, 0, 0, 30);
+-- loader screen: shows game icon, name, and support status before the main ui
+function Library:ShowLoader(Config, Callback)
+    -- Config = { Title, SupportedGames = { [placeId] = "Game Name", ... } }
+    Config = Config or {};
+    Config.Title = Config.Title or 'ethereon.xyz';
+    Config.SupportedGames = Config.SupportedGames or {};
+
+    local ScreenGui = Library.ScreenGui;
+    local TweenService = game:GetService('TweenService');
+
+    local placeId = game.PlaceId;
+    local isSupported = Config.SupportedGames[placeId] ~= nil;
+
+    -- overlay
+    local LoaderOverlay = Library:Create('Frame', {
+        AnchorPoint = Vector2.new(0.5, 0.5);
+        BackgroundColor3 = Color3.fromRGB(0, 0, 0);
+        BackgroundTransparency = 0.5;
+        BorderSizePixel = 0;
+        Position = UDim2.new(0.5, 0, 0.5, 0);
+        Size = UDim2.new(1, 0, 1, 0);
+        ZIndex = 500;
+        Active = true;
+        Parent = ScreenGui;
+    });
+
+    -- center container
+    local LoaderBox = Library:Create('Frame', {
+        AnchorPoint = Vector2.new(0.5, 0.5);
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25);
+        BorderColor3 = Library.AccentColor;
+        BorderSizePixel = 1;
+        Position = UDim2.new(0.5, 0, 0.5, 0);
+        Size = UDim2.fromOffset(360, 180);
+        ZIndex = 501;
+        Parent = LoaderOverlay;
+    });
+
+    Library:AddToRegistry(LoaderBox, {
+        BorderColor3 = 'AccentColor';
+    });
+
+    -- ethereon style: top bar text
+    local TitleLabel = Library:Create('TextLabel', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, 0, 0, 30);
+        Position = UDim2.new(0, 0, 0, 0);
         Text = Config.Title;
         Font = Library.Font;
-        TextSize = 22;
-        TextColor3 = Library.AccentColor;
+        TextSize = 15;
+        TextColor3 = Color3.new(0.9, 0.9, 0.9);
         ZIndex = 502;
         Parent = LoaderBox;
     });
 
-    -- game icon
-    local IconFrame = Library:Create('ImageLabel', {
-        AnchorPoint = Vector2.new(0.5, 0);
-        BackgroundColor3 = Color3.fromRGB(30, 30, 30);
+    local Separator = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(45, 45, 45);
         BorderSizePixel = 0;
-        Position = UDim2.new(0.5, 0, 0, 40);
-        Size = UDim2.fromOffset(128, 128);
-        Image = gameIcon;
+        Size = UDim2.new(1, 0, 0, 1);
+        Position = UDim2.new(0, 0, 0, 30);
         ZIndex = 502;
         Parent = LoaderBox;
     });
 
-    Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 8);
-        Parent = IconFrame;
-    });
-
-    -- game name
-    Library:Create('TextLabel', {
-        AnchorPoint = Vector2.new(0.5, 0);
-        BackgroundTransparency = 1;
-        Position = UDim2.new(0.5, 0, 0, 178);
-        Size = UDim2.new(1, 0, 0, 24);
-        Text = gameName;
-        Font = Library.Font;
-        TextSize = 16;
-        TextColor3 = Color3.new(1, 1, 1);
-        ZIndex = 502;
-        Parent = LoaderBox;
-    });
-
-    -- support status
-    local statusColor = isSupported and Color3.fromRGB(100, 255, 100) or Color3.fromRGB(255, 80, 80);
-    local statusText = isSupported and '✓ Supported' or '✗ Not Supported';
+    -- welcome string
+    local plr = game:GetService("Players").LocalPlayer;
+    local welcomeStr = "Welcome " .. (plr and plr.Name or "Player");
 
     Library:Create('TextLabel', {
-        AnchorPoint = Vector2.new(0.5, 0);
         BackgroundTransparency = 1;
-        Position = UDim2.new(0.5, 0, 0, 205);
-        Size = UDim2.new(1, 0, 0, 20);
-        Text = statusText;
+        Size = UDim2.new(1, 0, 0, 25);
+        Position = UDim2.new(0, 0, 0, 35);
+        Text = welcomeStr;
         Font = Library.Font;
         TextSize = 14;
-        TextColor3 = statusColor;
+        TextColor3 = Color3.new(0.85, 0.85, 0.85);
         ZIndex = 502;
         Parent = LoaderBox;
     });
 
-    -- loading bar
-    local BarBg = Library:Create('Frame', {
-        AnchorPoint = Vector2.new(0.5, 0);
-        BackgroundColor3 = Color3.fromRGB(40, 40, 40);
-        BorderSizePixel = 0;
-        Position = UDim2.new(0.5, 0, 0, 235);
-        Size = UDim2.fromOffset(180, 4);
+    -- dropdown label
+    Library:Create('TextLabel', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, -40, 0, 15);
+        Position = UDim2.new(0, 20, 0, 65);
+        Text = "Select script";
+        Font = Library.Font;
+        TextSize = 13;
+        TextColor3 = Color3.new(0.75, 0.75, 0.75);
+        TextXAlignment = Enum.TextXAlignment.Left;
         ZIndex = 502;
         Parent = LoaderBox;
     });
 
-    Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 2);
-        Parent = BarBg;
+    local DropdownBox = Library:Create('Frame', {
+        BackgroundColor3 = Color3.fromRGB(20, 20, 20);
+        BorderColor3 = Color3.fromRGB(40, 40, 40);
+        Size = UDim2.new(1, -40, 0, 22);
+        Position = UDim2.new(0, 20, 0, 80);
+        ZIndex = 502;
+        Parent = LoaderBox;
     });
 
-    local BarFill = Library:Create('Frame', {
-        BackgroundColor3 = Library.AccentColor;
-        BorderSizePixel = 0;
-        Size = UDim2.new(0, 0, 1, 0);
+    Library:Create('TextLabel', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, -10, 1, 0);
+        Position = UDim2.new(0, 5, 0, 0);
+        Text = "Universal";
+        Font = Library.Font;
+        TextSize = 13;
+        TextColor3 = Color3.fromRGB(200, 200, 200);
+        TextXAlignment = Enum.TextXAlignment.Left;
         ZIndex = 503;
-        Parent = BarBg;
+        Parent = DropdownBox;
     });
 
-    Library:Create('UICorner', {
-        CornerRadius = UDim.new(0, 2);
-        Parent = BarFill;
+    Library:Create('TextLabel', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(0, 20, 1, 0);
+        Position = UDim2.new(1, -20, 0, 0);
+        Text = "+";
+        Font = Enum.Font.Gotham;
+        TextSize = 9;
+        TextColor3 = Color3.fromRGB(200, 200, 200);
+        ZIndex = 503;
+        Parent = DropdownBox;
     });
 
-    -- animate bar
-    local fillTween = TweenService:Create(BarFill,
-        TweenInfo.new(2.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
-        { Size = UDim2.new(1, 0, 1, 0) }
-    );
-    fillTween:Play();
+    -- Buttons
+    local LoadBtn = Library:Create('TextButton', {
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25);
+        BorderColor3 = Color3.fromRGB(40, 40, 40);
+        Size = UDim2.new(1, -40, 0, 24);
+        Position = UDim2.new(0, 20, 0, 115);
+        Text = "Load";
+        Font = Library.Font;
+        TextSize = 14;
+        TextColor3 = Color3.fromRGB(220, 220, 220);
+        AutoButtonColor = false;
+        ZIndex = 502;
+        Parent = LoaderBox;
+    });
 
-    -- fade out after done
-    task.delay(2.5, function()
+    local ExitBtn = Library:Create('TextButton', {
+        BackgroundColor3 = Color3.fromRGB(25, 25, 25);
+        BorderColor3 = Color3.fromRGB(40, 40, 40);
+        Size = UDim2.new(1, -40, 0, 24);
+        Position = UDim2.new(0, 20, 0, 143);
+        Text = "Exit";
+        Font = Library.Font;
+        TextSize = 14;
+        TextColor3 = Color3.fromRGB(220, 220, 220);
+        AutoButtonColor = false;
+        ZIndex = 502;
+        Parent = LoaderBox;
+    });
+
+    -- effects
+    for _, btn in pairs({LoadBtn, ExitBtn}) do
+        btn.MouseEnter:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(35, 35, 35) }):Play()
+        end)
+        btn.MouseLeave:Connect(function()
+            TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(25, 25, 25) }):Play()
+        end)
+    end
+
+    local closed = false;
+
+    LoadBtn.MouseButton1Click:Connect(function()
+        if closed then return end
+        closed = true;
+        
+        LoadBtn.Text = "Loading...";
+        task.wait(0.2);
+        
         local fadeOut = TweenService:Create(LoaderOverlay,
-            TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+            TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
             { BackgroundTransparency = 1 }
         );
         fadeOut:Play();
-
-        -- fade all children
-        for _, desc in next, LoaderOverlay:GetDescendants() do
-            pcall(function()
-                if desc:IsA('TextLabel') then
-                    TweenService:Create(desc, TweenInfo.new(0.4), { TextTransparency = 1 }):Play();
-                elseif desc:IsA('ImageLabel') then
-                    TweenService:Create(desc, TweenInfo.new(0.4), { ImageTransparency = 1, BackgroundTransparency = 1 }):Play();
-                elseif desc:IsA('Frame') then
-                    TweenService:Create(desc, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play();
-                end
-            end)
-        end
-
-        task.delay(0.6, function()
-            LoaderOverlay:Destroy();
-            if Callback then
-                Callback(isSupported);
+        
+        TweenService:Create(LoaderBox, TweenInfo.new(0.3), { BackgroundTransparency = 1, BorderColor3 = Color3.fromRGB(25, 25, 25) }):Play();
+        for _, desc in next, LoaderBox:GetDescendants() do
+            if desc:IsA("TextLabel") or desc:IsA("TextButton") then
+                TweenService:Create(desc, TweenInfo.new(0.3), { TextTransparency = 1, BackgroundTransparency = 1 }):Play();
+            elseif desc:IsA("Frame") then
+                TweenService:Create(desc, TweenInfo.new(0.3), { BackgroundTransparency = 1, BorderColor3 = Color3.fromRGB(25, 25, 25) }):Play();
             end
+        end
+        
+        task.delay(0.3, function()
+            LoaderOverlay:Destroy();
+            if Callback then Callback(isSupported) end
         end)
+    end)
+
+    ExitBtn.MouseButton1Click:Connect(function()
+        if closed then return end
+        closed = true;
+        
+        local plr = game:GetService("Players").LocalPlayer;
+        if plr then plr:Kick("Exited") end
     end)
 end
 

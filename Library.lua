@@ -4053,11 +4053,10 @@ do
 
 end;
 
--- loader screen: shows game icon, name, and support status before the main ui
+-- loader screen: fits linoria aesthetic & functionality
 function Library:ShowLoader(Config, Callback)
-    -- Config = { Title, SupportedGames = { [placeId] = "Game Name", ... } }
     Config = Config or {};
-    Config.Title = Config.Title or 'ethereon.xyz';
+    Config.Title = Config.Title or 'Loader';
     Config.SupportedGames = Config.SupportedGames or {};
 
     local ScreenGui = Library.ScreenGui;
@@ -4069,7 +4068,7 @@ function Library:ShowLoader(Config, Callback)
     -- overlay
     local LoaderOverlay = Library:Create('Frame', {
         AnchorPoint = Vector2.new(0.5, 0.5);
-        BackgroundColor3 = Color3.fromRGB(0, 0, 0);
+        BackgroundColor3 = Color3.new(0, 0, 0);
         BackgroundTransparency = 0.5;
         BorderSizePixel = 0;
         Position = UDim2.new(0.5, 0, 0.5, 0);
@@ -4079,146 +4078,214 @@ function Library:ShowLoader(Config, Callback)
         Parent = ScreenGui;
     });
 
-    -- center container
+    -- Outer window frame (linoria style)
     local LoaderBox = Library:Create('Frame', {
         AnchorPoint = Vector2.new(0.5, 0.5);
-        BackgroundColor3 = Color3.fromRGB(25, 25, 25);
-        BorderColor3 = Library.AccentColor;
-        BorderSizePixel = 1;
+        BackgroundColor3 = Color3.new(0, 0, 0);
+        BorderSizePixel = 0;
         Position = UDim2.new(0.5, 0, 0.5, 0);
-        Size = UDim2.fromOffset(360, 180);
+        Size = UDim2.fromOffset(360, 210);
         ZIndex = 501;
         Parent = LoaderOverlay;
     });
 
-    Library:AddToRegistry(LoaderBox, {
+    -- Inner window inset
+    local LoaderInner = Library:Create('Frame', {
+        BackgroundColor3 = Library.MainColor;
+        BorderColor3 = Library.AccentColor;
+        BorderMode = Enum.BorderMode.Inset;
+        Position = UDim2.new(0, 1, 0, 1);
+        Size = UDim2.new(1, -2, 1, -2);
+        ZIndex = 502;
+        Parent = LoaderBox;
+    });
+    Library:AddToRegistry(LoaderInner, {
+        BackgroundColor3 = 'MainColor';
         BorderColor3 = 'AccentColor';
-    });
+    }, true);
 
-    -- ethereon style: top bar text
-    local TitleLabel = Library:Create('TextLabel', {
-        BackgroundTransparency = 1;
-        Size = UDim2.new(1, 0, 0, 30);
+    -- Title
+    local TitleLabel = Library:CreateLabel({
+        Size = UDim2.new(1, 0, 0, 25);
         Position = UDim2.new(0, 0, 0, 0);
-        Text = Config.Title;
+        Text = type(Config.Title) == 'string' and Config.Title or 'Loader';
         Font = Library.Font;
-        TextSize = 15;
-        TextColor3 = Color3.new(0.9, 0.9, 0.9);
-        ZIndex = 502;
-        Parent = LoaderBox;
+        TextSize = 14;
+        TextColor3 = Library.FontColor;
+        TextXAlignment = Enum.TextXAlignment.Center;
+        ZIndex = 503;
+        Parent = LoaderInner;
     });
+    Library:AddToRegistry(TitleLabel, { TextColor3 = 'FontColor' });
 
+    -- Separator
     local Separator = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(45, 45, 45);
+        BackgroundColor3 = Library.OutlineColor;
         BorderSizePixel = 0;
-        Size = UDim2.new(1, 0, 0, 1);
-        Position = UDim2.new(0, 0, 0, 30);
-        ZIndex = 502;
-        Parent = LoaderBox;
+        Size = UDim2.new(1, -16, 0, 1);
+        Position = UDim2.new(0, 8, 0, 25);
+        ZIndex = 503;
+        Parent = LoaderInner;
     });
+    Library:AddToRegistry(Separator, { BackgroundColor3 = 'OutlineColor' });
 
     -- welcome string
     local plr = game:GetService("Players").LocalPlayer;
     local welcomeStr = "Welcome " .. (plr and plr.Name or "Player");
 
-    Library:Create('TextLabel', {
-        BackgroundTransparency = 1;
+    local WelcomeLabel = Library:CreateLabel({
         Size = UDim2.new(1, 0, 0, 25);
-        Position = UDim2.new(0, 0, 0, 35);
+        Position = UDim2.new(0, 0, 0, 32);
         Text = welcomeStr;
         Font = Library.Font;
-        TextSize = 14;
-        TextColor3 = Color3.new(0.85, 0.85, 0.85);
-        ZIndex = 502;
-        Parent = LoaderBox;
+        TextSize = 13;
+        TextColor3 = Library.FontColor;
+        ZIndex = 503;
+        Parent = LoaderInner;
     });
+    Library:AddToRegistry(WelcomeLabel, { TextColor3 = 'FontColor' });
 
-    -- dropdown label
-    Library:Create('TextLabel', {
-        BackgroundTransparency = 1;
+    -- functional dropdown
+    local DropdownLabel = Library:CreateLabel({
         Size = UDim2.new(1, -40, 0, 15);
-        Position = UDim2.new(0, 20, 0, 65);
-        Text = "Select script";
+        Position = UDim2.new(0, 20, 0, 60);
+        Text = "Select Script";
         Font = Library.Font;
         TextSize = 13;
-        TextColor3 = Color3.new(0.75, 0.75, 0.75);
-        TextXAlignment = Enum.TextXAlignment.Left;
-        ZIndex = 502;
-        Parent = LoaderBox;
-    });
-
-    local DropdownBox = Library:Create('Frame', {
-        BackgroundColor3 = Color3.fromRGB(20, 20, 20);
-        BorderColor3 = Color3.fromRGB(40, 40, 40);
-        Size = UDim2.new(1, -40, 0, 22);
-        Position = UDim2.new(0, 20, 0, 80);
-        ZIndex = 502;
-        Parent = LoaderBox;
-    });
-
-    Library:Create('TextLabel', {
-        BackgroundTransparency = 1;
-        Size = UDim2.new(1, -10, 1, 0);
-        Position = UDim2.new(0, 5, 0, 0);
-        Text = "Universal";
-        Font = Library.Font;
-        TextSize = 13;
-        TextColor3 = Color3.fromRGB(200, 200, 200);
+        TextColor3 = Library.FontColor;
         TextXAlignment = Enum.TextXAlignment.Left;
         ZIndex = 503;
-        Parent = DropdownBox;
+        Parent = LoaderInner;
     });
+    Library:AddToRegistry(DropdownLabel, { TextColor3 = 'FontColor' });
 
-    Library:Create('TextLabel', {
-        BackgroundTransparency = 1;
+    local DropdownBtn = Library:Create('TextButton', {
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Library.OutlineColor;
+        Size = UDim2.new(1, -40, 0, 22);
+        Position = UDim2.new(0, 20, 0, 77);
+        Text = "";
+        AutoButtonColor = false;
+        ZIndex = 503;
+        Parent = LoaderInner;
+    });
+    Library:AddToRegistry(DropdownBtn, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor' }, true);
+
+    local initialScript = isSupported and "Supported Game" or "Universal";
+    local DropdownText = Library:CreateLabel({
+        Size = UDim2.new(1, -10, 1, 0);
+        Position = UDim2.new(0, 5, 0, 0);
+        Text = initialScript;
+        Font = Library.Font;
+        TextSize = 13;
+        TextColor3 = Library.FontColor;
+        TextXAlignment = Enum.TextXAlignment.Left;
+        ZIndex = 504;
+        Parent = DropdownBtn;
+    });
+    Library:AddToRegistry(DropdownText, { TextColor3 = 'FontColor' });
+
+    local DropdownIcon = Library:CreateLabel({
         Size = UDim2.new(0, 20, 1, 0);
         Position = UDim2.new(1, -20, 0, 0);
         Text = "+";
         Font = Enum.Font.Gotham;
-        TextSize = 9;
-        TextColor3 = Color3.fromRGB(200, 200, 200);
-        ZIndex = 503;
-        Parent = DropdownBox;
+        TextSize = 10;
+        TextColor3 = Library.FontColor;
+        ZIndex = 504;
+        Parent = DropdownBtn;
     });
+    Library:AddToRegistry(DropdownIcon, { TextColor3 = 'FontColor' });
+
+    -- dropdown list
+    local DropdownList = Library:Create('Frame', {
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Library.OutlineColor;
+        Size = UDim2.new(1, 0, 0, 48);
+        Position = UDim2.new(0, 0, 1, 1);
+        Visible = false;
+        ZIndex = 510;
+        Parent = DropdownBtn;
+    });
+    Library:AddToRegistry(DropdownList, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor' }, true);
+
+    local UniOpt = Library:Create('TextButton', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, 0, 0, 24);
+        Position = UDim2.new(0, 0, 0, 0);
+        Text = "Universal";
+        Font = Library.Font;
+        TextSize = 13;
+        TextColor3 = Library.FontColor;
+        ZIndex = 511;
+        Parent = DropdownList;
+    });
+    local SuppOpt = Library:Create('TextButton', {
+        BackgroundTransparency = 1;
+        Size = UDim2.new(1, 0, 0, 24);
+        Position = UDim2.new(0, 0, 0, 24);
+        Text = "Supported Game";
+        Font = Library.Font;
+        TextSize = 13;
+        TextColor3 = isSupported and Library.FontColor or Color3.fromRGB(130, 130, 130);
+        ZIndex = 511;
+        Parent = DropdownList;
+    });
+    Library:AddToRegistry(UniOpt, { TextColor3 = 'FontColor' });
+    if isSupported then
+        Library:AddToRegistry(SuppOpt, { TextColor3 = 'FontColor' });
+    end
+
+    local listOpen = false;
+    DropdownBtn.MouseButton1Click:Connect(function()
+        listOpen = not listOpen;
+        DropdownList.Visible = listOpen;
+        DropdownIcon.Text = listOpen and "-" or "+";
+    end)
+    UniOpt.MouseButton1Click:Connect(function()
+        DropdownText.Text = "Universal";
+        listOpen = false;
+        DropdownList.Visible = false;
+        DropdownIcon.Text = "+";
+    end)
+    SuppOpt.MouseButton1Click:Connect(function()
+        if not isSupported then return end
+        DropdownText.Text = "Supported Game";
+        listOpen = false;
+        DropdownList.Visible = false;
+        DropdownIcon.Text = "+";
+    end)
 
     -- Buttons
     local LoadBtn = Library:Create('TextButton', {
-        BackgroundColor3 = Color3.fromRGB(25, 25, 25);
-        BorderColor3 = Color3.fromRGB(40, 40, 40);
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Library.OutlineColor;
         Size = UDim2.new(1, -40, 0, 24);
         Position = UDim2.new(0, 20, 0, 115);
         Text = "Load";
         Font = Library.Font;
-        TextSize = 14;
-        TextColor3 = Color3.fromRGB(220, 220, 220);
+        TextSize = 13;
+        TextColor3 = Library.FontColor;
         AutoButtonColor = false;
-        ZIndex = 502;
-        Parent = LoaderBox;
+        ZIndex = 503;
+        Parent = LoaderInner;
     });
+    Library:AddToRegistry(LoadBtn, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; TextColor3 = 'FontColor' }, true);
 
     local ExitBtn = Library:Create('TextButton', {
-        BackgroundColor3 = Color3.fromRGB(25, 25, 25);
-        BorderColor3 = Color3.fromRGB(40, 40, 40);
+        BackgroundColor3 = Library.BackgroundColor;
+        BorderColor3 = Library.OutlineColor;
         Size = UDim2.new(1, -40, 0, 24);
-        Position = UDim2.new(0, 20, 0, 143);
+        Position = UDim2.new(0, 20, 0, 145);
         Text = "Exit";
         Font = Library.Font;
-        TextSize = 14;
-        TextColor3 = Color3.fromRGB(220, 220, 220);
+        TextSize = 13;
+        TextColor3 = Library.FontColor;
         AutoButtonColor = false;
-        ZIndex = 502;
-        Parent = LoaderBox;
+        ZIndex = 503;
+        Parent = LoaderInner;
     });
-
-    -- effects
-    for _, btn in pairs({LoadBtn, ExitBtn}) do
-        btn.MouseEnter:Connect(function()
-            TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(35, 35, 35) }):Play()
-        end)
-        btn.MouseLeave:Connect(function()
-            TweenService:Create(btn, TweenInfo.new(0.2), { BackgroundColor3 = Color3.fromRGB(25, 25, 25) }):Play()
-        end)
-    end
+    Library:AddToRegistry(ExitBtn, { BackgroundColor3 = 'BackgroundColor'; BorderColor3 = 'OutlineColor'; TextColor3 = 'FontColor' }, true);
 
     local closed = false;
 
@@ -4235,18 +4302,28 @@ function Library:ShowLoader(Config, Callback)
         );
         fadeOut:Play();
         
-        TweenService:Create(LoaderBox, TweenInfo.new(0.3), { BackgroundTransparency = 1, BorderColor3 = Color3.fromRGB(25, 25, 25) }):Play();
+        TweenService:Create(LoaderBox, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play();
+        TweenService:Create(LoaderInner, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play();
+
         for _, desc in next, LoaderBox:GetDescendants() do
             if desc:IsA("TextLabel") or desc:IsA("TextButton") then
-                TweenService:Create(desc, TweenInfo.new(0.3), { TextTransparency = 1, BackgroundTransparency = 1 }):Play();
-            elseif desc:IsA("Frame") then
-                TweenService:Create(desc, TweenInfo.new(0.3), { BackgroundTransparency = 1, BorderColor3 = Color3.fromRGB(25, 25, 25) }):Play();
+                TweenService:Create(desc, TweenInfo.new(0.3), { TextTransparency = 1 }):Play();
+            end
+            if desc:IsA("Frame") or desc:IsA("TextButton") then
+                pcall(function()
+                    TweenService:Create(desc, TweenInfo.new(0.3), { BackgroundTransparency = 1 }):Play();
+                end)
+            end
+            if desc:IsA("UIStroke") then
+                desc.Transparency = 1;
             end
         end
         
         task.delay(0.3, function()
             LoaderOverlay:Destroy();
-            if Callback then Callback(isSupported) end
+            -- Pass true if they chose the supported game option OR if game is forced universal
+            local actuallySupported = (DropdownText.Text == "Supported Game");
+            if Callback then Callback(actuallySupported) end
         end)
     end)
 
@@ -4255,7 +4332,7 @@ function Library:ShowLoader(Config, Callback)
         closed = true;
         
         local plr = game:GetService("Players").LocalPlayer;
-        if plr then plr:Kick("Exited") end
+        if plr then plr:Kick("Exited loader.") end
     end)
 end
 

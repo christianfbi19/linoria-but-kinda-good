@@ -164,28 +164,46 @@ end;
 function Library:MakeDraggable(Instance, Cutoff)
     Instance.Active = true;
 
+    local Dragging = false
+    local DragInput = nil
+    local StartPos = nil
+    local FramePos = nil
+
     Instance.InputBegan:Connect(function(Input)
-        if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+        if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and not Library:MouseIsOverOpenedFrame() then
             local ObjPos = Vector2.new(
-                Mouse.X - Instance.AbsolutePosition.X,
-                Mouse.Y - Instance.AbsolutePosition.Y
+                Input.Position.X - Instance.AbsolutePosition.X,
+                Input.Position.Y - Instance.AbsolutePosition.Y
             );
 
             if ObjPos.Y > (Cutoff or 40) then
                 return;
             end;
 
-            while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-                Instance.Position = UDim2.new(
-                    0,
-                    Mouse.X - ObjPos.X + (Instance.Size.X.Offset * Instance.AnchorPoint.X),
-                    0,
-                    Mouse.Y - ObjPos.Y + (Instance.Size.Y.Offset * Instance.AnchorPoint.Y)
-                );
+            Dragging = true
+            DragInput = Input
+            StartPos = Input.Position
+            FramePos = Instance.Position
+        end
+    end)
 
-                RenderStepped:Wait();
-            end;
-        end;
+    Instance.InputChanged:Connect(function(Input)
+        if Dragging and Input == DragInput then
+            local Delta = Input.Position - StartPos
+            Instance.Position = UDim2.new(
+                FramePos.X.Scale,
+                FramePos.X.Offset + Delta.X,
+                FramePos.Y.Scale,
+                FramePos.Y.Offset + Delta.Y
+            )
+        end
+    end)
+
+    InputService.InputEnded:Connect(function(Input)
+        if Input == DragInput then
+            Dragging = false
+            DragInput = nil
+        end
     end)
 end;
 
@@ -897,47 +915,82 @@ do
             ColorPicker:Display();
         end;
 
+        local SatVibDragging = false
+        local SatVibInput = nil
+
         SatVibMap.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) then
+                SatVibDragging = true
+                SatVibInput = Input
+                
+                local function UpdateSatVib()
                     local MinX = SatVibMap.AbsolutePosition.X;
                     local MaxX = MinX + SatVibMap.AbsoluteSize.X;
-                    local MouseX = math.clamp(Mouse.X, MinX, MaxX);
+                    local MouseX = math.clamp(SatVibInput.Position.X, MinX, MaxX);
 
                     local MinY = SatVibMap.AbsolutePosition.Y;
                     local MaxY = MinY + SatVibMap.AbsoluteSize.Y;
-                    local MouseY = math.clamp(Mouse.Y, MinY, MaxY);
+                    local MouseY = math.clamp(SatVibInput.Position.Y, MinY, MaxY);
 
                     ColorPicker.Sat = (MouseX - MinX) / (MaxX - MinX);
                     ColorPicker.Vib = 1 - ((MouseY - MinY) / (MaxY - MinY));
                     ColorPicker:Display();
-
-                    RenderStepped:Wait();
-                end;
-
-                Library:AttemptSave();
+                end
+                
+                UpdateSatVib()
             end;
         end);
 
+        InputService.InputChanged:Connect(function(Input)
+            if SatVibDragging and Input == SatVibInput then
+                local MinX = SatVibMap.AbsolutePosition.X;
+                local MaxX = MinX + SatVibMap.AbsoluteSize.X;
+                local MouseX = math.clamp(Input.Position.X, MinX, MaxX);
+
+                local MinY = SatVibMap.AbsolutePosition.Y;
+                local MaxY = MinY + SatVibMap.AbsoluteSize.Y;
+                local MouseY = math.clamp(Input.Position.Y, MinY, MaxY);
+
+                ColorPicker.Sat = (MouseX - MinX) / (MaxX - MinX);
+                ColorPicker.Vib = 1 - ((MouseY - MinY) / (MaxY - MinY));
+                ColorPicker:Display();
+            end
+        end)
+
+        local HueDragging = false
+        local HueInput = nil
+
         HueSelectorInner.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) then
+                HueDragging = true
+                HueInput = Input
+                
+                local function UpdateHue()
                     local MinY = HueSelectorInner.AbsolutePosition.Y;
                     local MaxY = MinY + HueSelectorInner.AbsoluteSize.Y;
-                    local MouseY = math.clamp(Mouse.Y, MinY, MaxY);
+                    local MouseY = math.clamp(HueInput.Position.Y, MinY, MaxY);
 
                     ColorPicker.Hue = ((MouseY - MinY) / (MaxY - MinY));
                     ColorPicker:Display();
-
-                    RenderStepped:Wait();
-                end;
-
-                Library:AttemptSave();
+                end
+                
+                UpdateHue()
             end;
         end);
 
+        InputService.InputChanged:Connect(function(Input)
+            if HueDragging and Input == HueInput then
+                local MinY = HueSelectorInner.AbsolutePosition.Y;
+                local MaxY = MinY + HueSelectorInner.AbsoluteSize.Y;
+                local MouseY = math.clamp(Input.Position.Y, MinY, MaxY);
+
+                ColorPicker.Hue = ((MouseY - MinY) / (MaxY - MinY));
+                ColorPicker:Display();
+            end
+        end)
+
         DisplayFrame.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and not Library:MouseIsOverOpenedFrame() then
                 if PickerFrameOuter.Visible then
                     ColorPicker:Hide()
                 else
@@ -950,32 +1003,62 @@ do
             end
         end);
 
+        local TransDragging = false
+        local TransInput = nil
+
         if TransparencyBoxInner then
             TransparencyBoxInner.InputBegan:Connect(function(Input)
-                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                    while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
+                if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) then
+                    TransDragging = true
+                    TransInput = Input
+                    
+                    local function UpdateTrans()
                         local MinX = TransparencyBoxInner.AbsolutePosition.X;
                         local MaxX = MinX + TransparencyBoxInner.AbsoluteSize.X;
-                        local MouseX = math.clamp(Mouse.X, MinX, MaxX);
+                        local MouseX = math.clamp(TransInput.Position.X, MinX, MaxX);
 
                         ColorPicker.Transparency = 1 - ((MouseX - MinX) / (MaxX - MinX));
-
                         ColorPicker:Display();
-
-                        RenderStepped:Wait();
-                    end;
-
-                    Library:AttemptSave();
+                    end
+                    
+                    UpdateTrans()
                 end;
             end);
+
+            InputService.InputChanged:Connect(function(Input)
+                if TransDragging and Input == TransInput then
+                    local MinX = TransparencyBoxInner.AbsolutePosition.X;
+                    local MaxX = MinX + TransparencyBoxInner.AbsoluteSize.X;
+                    local MouseX = math.clamp(Input.Position.X, MinX, MaxX);
+
+                    ColorPicker.Transparency = 1 - ((MouseX - MinX) / (MaxX - MinX));
+                    ColorPicker:Display();
+                end
+            end)
         end;
 
-        Library:GiveSignal(InputService.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+        Library:GiveSignal(InputService.InputEnded:Connect(function(Input)
+            if Input == SatVibInput then
+                SatVibDragging = false
+                SatVibInput = nil
+                Library:AttemptSave()
+            end
+            if Input == HueInput then
+                HueDragging = false
+                HueInput = nil
+                Library:AttemptSave()
+            end
+            if Input == TransInput then
+                TransDragging = false
+                TransInput = nil
+                Library:AttemptSave()
+            end
+
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) then
                 local AbsPos, AbsSize = PickerFrameOuter.AbsolutePosition, PickerFrameOuter.AbsoluteSize;
 
-                if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
-                    or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+                if Input.Position.X < AbsPos.X or Input.Position.X > AbsPos.X + AbsSize.X
+                    or Input.Position.Y < (AbsPos.Y - 20 - 1) or Input.Position.Y > AbsPos.Y + AbsSize.Y then
 
                     ColorPicker:Hide();
                 end;
@@ -1199,7 +1282,7 @@ do
             end;
 
             Label.InputBegan:Connect(function(Input)
-                if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) then
                     ModeButton:Select();
                     Library:AttemptSave();
                 end;
@@ -1306,7 +1389,7 @@ do
         local Picking = false;
 
         PickOuter.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and not Library:MouseIsOverOpenedFrame() then
                 Picking = true;
 
                 DisplayLabel.Text = '';
@@ -1338,8 +1421,8 @@ do
                         if Key == 'Backspace' then
                             Key = 'None'
                         end
-                    elseif Input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        Key = 'MB1';
+                    elseif Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+                        Key = (Input.UserInputType == Enum.UserInputType.Touch and 'Tap' or 'MB1');
                     elseif Input.UserInputType == Enum.UserInputType.MouseButton2 then
                         Key = 'MB2';
                     end;
@@ -1384,11 +1467,11 @@ do
                 KeyPicker:Update();
             end;
 
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
                 local AbsPos, AbsSize = ModeSelectOuter.AbsolutePosition, ModeSelectOuter.AbsoluteSize;
 
-                if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
-                    or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+                if Input.Position.X < AbsPos.X or Input.Position.X > AbsPos.X + AbsSize.X
+                    or Input.Position.Y < (AbsPos.Y - 20 - 1) or Input.Position.Y > AbsPos.Y + AbsSize.Y then
 
                     ModeSelectOuter.Visible = false;
                 end;
@@ -1581,7 +1664,7 @@ do
                     return false
                 end
 
-                if Input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+                if Input.UserInputType ~= Enum.UserInputType.MouseButton1 and Input.UserInputType ~= Enum.UserInputType.Touch then
                     return false
                 end
 
@@ -2006,7 +2089,7 @@ do
         end;
 
         ToggleRegion.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and not Library:MouseIsOverOpenedFrame() then
                 Toggle:SetValue(not Toggle.Value) -- Why was it not like this from the start?
                 Library:AttemptSave();
             end;
@@ -2192,33 +2275,46 @@ do
             Library:SafeCallback(Slider.Changed, Slider.Value);
         end;
 
+        local SliderDragging = false
+        local SliderInput = nil
+
         SliderInner.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
-                local mPos = Mouse.X;
-                local gPos = Fill.Size.X.Offset;
-                local Diff = mPos - (Fill.AbsolutePosition.X + gPos);
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and not Library:MouseIsOverOpenedFrame() then
+                SliderDragging = true
+                SliderInput = Input
+                
+                local nX = math.clamp(Input.Position.X - SliderInner.AbsolutePosition.X, 0, Slider.MaxSize)
+                local nValue = Slider:GetValueFromXOffset(nX)
+                Slider.Value = nValue
+                Slider:Display()
+                
+                Library:SafeCallback(Slider.Callback, Slider.Value)
+                Library:SafeCallback(Slider.Changed, Slider.Value)
+            end
+        end)
 
-                while InputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) do
-                    local nMPos = Mouse.X;
-                    local nX = math.clamp(gPos + (nMPos - mPos) + Diff, 0, Slider.MaxSize);
+        InputService.InputChanged:Connect(function(Input)
+            if SliderDragging and Input == SliderInput then
+                local nX = math.clamp(Input.Position.X - SliderInner.AbsolutePosition.X, 0, Slider.MaxSize)
+                local nValue = Slider:GetValueFromXOffset(nX)
+                
+                if nValue ~= Slider.Value then
+                    Slider.Value = nValue
+                    Slider:Display()
+                    
+                    Library:SafeCallback(Slider.Callback, Slider.Value)
+                    Library:SafeCallback(Slider.Changed, Slider.Value)
+                end
+            end
+        end)
 
-                    local nValue = Slider:GetValueFromXOffset(nX);
-                    local OldValue = Slider.Value;
-                    Slider.Value = nValue;
-
-                    Slider:Display();
-
-                    if nValue ~= OldValue then
-                        Library:SafeCallback(Slider.Callback, Slider.Value);
-                        Library:SafeCallback(Slider.Changed, Slider.Value);
-                    end;
-
-                    RenderStepped:Wait();
-                end;
-
-                Library:AttemptSave();
-            end;
-        end);
+        InputService.InputEnded:Connect(function(Input)
+            if Input == SliderInput then
+                SliderDragging = false
+                SliderInput = nil
+                Library:AttemptSave()
+            end
+        end)
 
         Slider:Display();
         Groupbox:AddBlank(Info.BlankSize or 6);
@@ -2509,7 +2605,7 @@ do
                 end;
 
                 ButtonLabel.InputBegan:Connect(function(Input)
-                    if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+                    if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) then
                         local Try = not Selected;
 
                         if Dropdown:GetActiveValues() == 1 and (not Try) and (not Info.AllowNull) then
@@ -2610,7 +2706,7 @@ do
         end;
 
         DropdownOuter.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and not Library:MouseIsOverOpenedFrame() then
                 if ListOuter.Visible then
                     Dropdown:CloseDropdown();
                 else
@@ -2620,11 +2716,11 @@ do
         end);
 
         InputService.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) then
                 local AbsPos, AbsSize = ListOuter.AbsolutePosition, ListOuter.AbsoluteSize;
 
-                if Mouse.X < AbsPos.X or Mouse.X > AbsPos.X + AbsSize.X
-                    or Mouse.Y < (AbsPos.Y - 20 - 1) or Mouse.Y > AbsPos.Y + AbsSize.Y then
+                if Input.Position.X < AbsPos.X or Input.Position.X > AbsPos.X + AbsSize.X
+                    or Input.Position.Y < (AbsPos.Y - 20 - 1) or Input.Position.Y > AbsPos.Y + AbsSize.Y then
 
                     Dropdown:CloseDropdown();
                 end;
@@ -3010,6 +3106,8 @@ do
     MobileToggleBtn.MouseButton1Click:Connect(function()
         task.spawn(Library.Toggle)
     end)
+
+    Library:MakeDraggable(MobileToggleBtn);
 
     Library.MobileToggleButton = MobileToggleBtn;
 
@@ -4755,7 +4853,7 @@ function Library:CreateWindow(...)
                 end;
 
                 Button.InputBegan:Connect(function(Input)
-                    if Input.UserInputType == Enum.UserInputType.MouseButton1 and not Library:MouseIsOverOpenedFrame() then
+                    if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) and not Library:MouseIsOverOpenedFrame() then
                         Tab:Show();
                         Tab:Resize();
                     end;
@@ -4791,7 +4889,7 @@ function Library:CreateWindow(...)
         end;
 
         TabButton.InputBegan:Connect(function(Input)
-            if Input.UserInputType == Enum.UserInputType.MouseButton1 then
+            if (Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch) then
                 Tab:ShowTab();
             end;
         end);
